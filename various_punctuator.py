@@ -21,6 +21,8 @@ class BLSTMPunctuator(nn.Module):
         self.blstm = nn.LSTM(embedding_size, hidden_size, num_layers,
                              batch_first=True, bidirectional=True)
         self.fc = nn.Linear(hidden_size*2, num_classes)
+        # init weights
+        self.init_weights(init_range=0.1)
 
     def init_hidden(self, batch_size):
         # *2 because bidirectional
@@ -44,6 +46,22 @@ class BLSTMPunctuator(nn.Module):
         out = out.contiguous()
         score = self.fc(out.view(out.size(0) * out.size(1), out.size(2)))
         return score.view(out.size(0), out.size(1), score.size(1))  #, hidden
+
+    def init_weights(self, init_range=0.1):
+        """ Initialize the weights. """
+        for p in self.parameters():
+            if p.dim() > 1:
+                p.data.uniform_(-init_range, init_range)
+            else:
+                p.data.fill_(0)
+
+    @staticmethod
+    def serialize(model, optimizer, epoch):
+        """ To store more information about model. """
+        package = {'state_dict': model.state_dict(),
+                   'optim_dict': optimizer.state_dict(),
+                   'epoch': epoch}
+        return package
 
 
 class LSTMPunctuator(nn.Module):

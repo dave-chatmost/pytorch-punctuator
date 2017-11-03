@@ -1,3 +1,5 @@
-vocab.10W
 .ipynb_checkpoints
 __pycache__
+exp
+data
+log

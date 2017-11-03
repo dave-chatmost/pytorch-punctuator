@@ -1,3 +1,7 @@
+import errno
+import os
+
+
 def load_vocab(vocab_path, extra_word_list=[], encoding='utf8'):
     n = len(extra_word_list)
     with open(vocab_path, encoding=encoding) as vocab_file:
@@ -5,6 +9,24 @@ def load_vocab(vocab_path, extra_word_list=[], encoding='utf8'):
     for i, word in enumerate(extra_word_list):
             vocab[word] = i
     return vocab
+
+def num_param(model):
+    params = 0
+    for p in model.parameters():
+        tmp = 1
+        for x in p.size():
+            tmp *= x
+        params += tmp
+    return params
+
+def mkdir(dir_path):
+    try:
+        os.makedirs(dir_path)
+    except OSError as e:
+        if e.errno == errno.EEXIST:
+            print('Directory already exists.')
+        else:
+            raise
 
 
 if __name__ == "__main__":
