@@ -46,7 +46,7 @@ class PuncDataset(data.Dataset):
 
 
 def collate_fn(data):
-    """Do padding.
+    """Do padding. Pad labels by -1.
     Args:
         data: list of tuple (input, label)
             - input: torch tensor, variable length
@@ -57,9 +57,10 @@ def collate_fn(data):
     # seperate inputs and labels
     input_seqs, label_seqs = zip(*data)
     # padding
+    PAD = -1
     lengths = [len(seq) for seq in input_seqs]
     input_padded_seqs = torch.zeros(len(input_seqs), max(lengths)).long()
-    label_padded_seqs = torch.zeros(len(input_seqs), max(lengths)).long()
+    label_padded_seqs = torch.zeros(len(input_seqs), max(lengths)).fill_(PAD).long()
     for i, (input, label) in enumerate(zip(input_seqs, label_seqs)):
         end = lengths[i]
         input_padded_seqs[i, :end] = input[:end]

@@ -1,5 +1,7 @@
 import argparse
+import io
 import os
+import sys
 import time
 
 import numpy as np
@@ -10,6 +12,9 @@ from torch.autograd import Variable
 import utils
 from data_loader import get_loader
 from various_punctuator import BLSTMPunctuator
+
+# make print() work correctly under Chinese
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 parser = argparse.ArgumentParser(description="BLSTM punctuation prediction training.")
 # original data
@@ -62,13 +67,14 @@ parser.add_argument('--print-freq', default=1000, type=int,
 
 def run_one_epoch(data_loader, model, criterion, optimizer, epoch, args,
                   cross_valid=False):
-    total_loss = 0
-    total_correct = 0
+    total_loss = 0.0
+    total_acc = 0.0
     total_words = 0
+    start = time.time()
     for i, (inputs, labels, lengths) in enumerate(data_loader):
         # 1. mini-batch data
-        inputs = Variable(inputs.cuda())
-        labels = Variable(labels.cuda())
+        inputs = Variable(inputs.cuda(), requires_grad=False)
+        labels = Variable(labels.cuda(), requires_grad=False)
         # 2. forward and compute loss
         optimizer.zero_grad()
         scores = model(inputs, lengths)
@@ -82,18 +88,27 @@ def run_one_epoch(data_loader, model, criterion, optimizer, epoch, args,
             # 4. update
             optimizer.step()
 
-        _, predict = torch.max(scores, 1)
-        total_correct += (predict == labels.view(-1)).sum().data[0]
         total_loss += loss.data[0]
-        total_words += np.sum(lengths)
+        _, predict = torch.max(scores, 1)
+        correct = (predict == labels.view(-1)).sum().data[0]
+        words = np.sum(lengths)
+        acc = 100.0 * correct / words
+        total_acc += acc
+        total_words =+ words
 
         if args.verbose and i % args.print_freq == 0:
             print('Epoch {0} | Iter {1} | Average Loss {2:.3f} | '
-                  'Perplexity {3:.3f} | Acc {4:.3f}'.format(
+                  'Perplexity {3:.3f} | Acc {4:.3f} | {5} words/s | '
+                  '{6:.1f} ms/batch'.format(
                       epoch + 1, i, total_loss / (i + 1),
-                      np.exp(total_loss / (i + 1)), 1.0),  # 1.0 is placeholder
+                      np.exp(total_loss / (i + 1)),
+                      total_acc / (i + 1),
+                      int(total_words / (time.time()-start)),
+                      1000*(time.time()-start)/(i+1)),
                   flush=True)
-    return total_loss / (i+1), 1.0  # 1.0 is a placeholder for acc
+        del loss
+        del scores
+    return total_loss / (i + 1), total_acc / (i + 1)
 
 
 def main(args):
@@ -108,7 +123,7 @@ def main(args):
                             args.num_class)
     model.cuda()  # Just support GPU now.
     # Loss
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(ignore_index=-1)  # pad labels by -1
     # Optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr,
                                  weight_decay=args.L2)
