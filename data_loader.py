@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.utils.data as data
 
@@ -40,8 +41,10 @@ class PuncDataset(data.Dataset):
                 punc = " "
         input.append(self.word2id["<END>"])
         label.append(self.punc2id[punc])
-        input = torch.Tensor(input)
-        label = torch.Tensor(label)
+        # input = torch.Tensor(input)
+        # label = torch.Tensor(label)
+        input = np.array(input)
+        label = np.array(label)
         return input, label
 
 
