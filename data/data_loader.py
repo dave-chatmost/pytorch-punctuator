@@ -5,7 +5,7 @@ import torch.utils.data as data
 import utils
 
 
-class NoPuncTextParser(object):
+class NoPuncTextDataset(object):
     """
     Parse text without punctuation.
     Used by punctuation prediciton inference.

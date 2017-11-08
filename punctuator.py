@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 
-from data.data_loader import NoPuncTextParser
+from data.data_loader import NoPuncTextDataset
 from various_punctuator import LSTMPPunctuator
 from utils import add_punc_to_txt
 
@@ -28,7 +28,7 @@ parser.add_argument('--cuda', action="store_true",
 
 
 def inference(args):
-    dataset = NoPuncTextParser(args.data, args.vocab, args.punc_vocab)
+    dataset = NoPuncTextDataset(args.data, args.vocab, args.punc_vocab)
     model = LSTMPPunctuator.load_model(args.model_path, cuda=args.cuda)
     model.eval()
     # Output function
