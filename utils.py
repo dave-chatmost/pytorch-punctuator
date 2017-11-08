@@ -28,6 +28,23 @@ def mkdir(dir_path):
         else:
             raise
 
+def add_punc_to_txt(txt_seq, predict, class2punc):
+    """Add punctuation to text.
+    Args:
+        txt_seq: text without punctuation
+        predict: list of punctuation class id
+        class2punc: map punctuation class id to punctuation
+    Returns:
+        txt_with_punc: text with punctuation, without newline
+    """
+    txt_with_punc = ""
+    for i, word in enumerate(txt_seq.split()):
+        punc = class2punc[predict[i]]
+        txt_with_punc += word + " " if punc == " " else punc + " " + word + " "
+    punc = class2punc[predict[i + 1]]
+    txt_with_punc += punc
+    return txt_with_punc
+
 
 if __name__ == "__main__":
     import io

@@ -10,7 +10,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 
 import utils
-from data_loader import PuncDataset
+from data.data_loader import PuncDataset
 from various_punctuator import LSTMPPunctuator
 
 # make print() work correctly under Chinese
@@ -206,7 +206,7 @@ def main(args):
     # Model
     model = LSTMPPunctuator(args.vocab_size, args.embedding_size, args.hidden_size,
                             args.proj_size, args.hidden_layers, args.num_class)
-    model.cuda()  # Just support GPU now.
+    model = model.cuda()  # Just support GPU now.
     # Loss
     criterion = nn.CrossEntropyLoss()
     # Optimizer

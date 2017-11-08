@@ -12,17 +12,17 @@ class BLSTMPunctuator(nn.Module):
     """
 
     def __init__(self, vocab_size, embedding_size, hidden_size, num_layers,
-                 num_classes):
+                 num_class):
         super(BLSTMPunctuator, self).__init__()
         # hyper parameters
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-        self.num_classes = num_classes
+        self.num_class = num_class
         # model component
         self.embedding = nn.Embedding(vocab_size, embedding_size)
         self.blstm = nn.LSTM(embedding_size, hidden_size, num_layers,
                              batch_first=True, bidirectional=True)
-        self.fc = nn.Linear(hidden_size*2, num_classes)
+        self.fc = nn.Linear(hidden_size*2, num_class)
         # init weights
         self.init_weights(init_range=0.1)
 
@@ -72,19 +72,21 @@ class LSTMPPunctuator(nn.Module):
     """
 
     def __init__(self, vocab_size, embedding_size, hidden_size, proj_size,
-                 num_layers, num_classes):
+                 num_layers, num_class):
         super(LSTMPPunctuator, self).__init__()
         # hyper parameters
+        self.vocab_size = vocab_size
+        self.embedding_size = embedding_size
         self.hidden_size = hidden_size
         self.proj_size = proj_size
         self.num_layers = num_layers
-        self.num_classes = num_classes
+        self.num_class = num_class
         # model component
         self.embedding = nn.Embedding(vocab_size, embedding_size)
         self.lstm = lstmp.LSTMP(embedding_size, hidden_size,
                                 num_layers=num_layers,
                                 use_peepholes=True, proj_size=proj_size)
-        self.fc = nn.Linear(proj_size, num_classes)
+        self.fc = nn.Linear(proj_size, num_class)
         # init weights
         self.init_weights(init_range=0.1)
 
@@ -136,10 +138,35 @@ class LSTMPPunctuator(nn.Module):
                 hidden[1][:, b, :].data.fill_(0)
         return hidden
 
+    @classmethod
+    def load_model(cls, path, cuda=True):
+        # Below load all tensors onto the CPU
+        package = torch.load(path, map_location=lambda storage, loc: storage)
+        model = cls(vocab_size=package['vocab_size'],
+                    embedding_size=package['embedding_size'],
+                    hidden_size=package['hidden_size'],
+                    proj_size=package['proj_size'],
+                    num_layers=package['num_layers'],
+                    num_class=package['num_class'])
+        model.load_state_dict(package['state_dict'])
+        if cuda:
+            # TODO Multi GPU
+            # model = torch.nn.DataParallel(model).cuda()
+            model.cuda()
+        return model
+
+
     @staticmethod
     def serialize(model, optimizer, epoch):
         """ To store more information about model. """
-        package = {'state_dict': model.state_dict(),
-                   'optim_dict': optimizer.state_dict(),
-                   'epoch': epoch}
+        package = {
+            'vocab_size': model.vocab_size,
+            'embedding_size': model.embedding_size,
+            'hidden_size': model.hidden_size,
+            'proj_size': model.proj_size,
+            'num_layers': model.num_layers,
+            'num_class': model.num_class,
+            'state_dict': model.state_dict(),
+            'optim_dict': optimizer.state_dict(),
+            'epoch': epoch}
         return package

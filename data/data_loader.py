@@ -5,6 +5,41 @@ import torch.utils.data as data
 import utils
 
 
+class NoPuncTextParser(object):
+    """
+    Parse text without punctuation.
+    Used by punctuation prediciton inference.
+    """
+
+    def __init__(self, txt_path, in_vocab_path, out_vocab_path):
+        """Read txt file, input vocab and output vocab (punc vocab)."""
+        self.txt_seqs = open(txt_path, encoding='utf8').readlines()
+        self.num_seqs = len(self.txt_seqs)
+        self.word2id = utils.load_vocab(in_vocab_path,
+                                        extra_word_list=["<UNK>", "<END>"])
+        self.punc2id = utils.load_vocab(out_vocab_path,
+                                        extra_word_list=[" "])
+        self.class2punc = { k : v for (v, k) in self.punc2id.items()}
+
+    def __len__(self):
+        """Return number of sentences in txt file."""
+        return self.num_seqs
+
+    def __getitem__(self, index):
+        """Return input id sequence."""
+        txt_seq = self.txt_seqs[index]
+        word_id_seq = self.preprocess(txt_seq)
+        return word_id_seq, txt_seq
+
+    def preprocess(self, txt_seq):
+        """Convert txt sequence to word-id-seq."""
+        input = []
+        for token in txt_seq.split():
+            input.append(self.word2id.get(token, self.word2id["<UNK>"]))
+        input.append(self.word2id["<END>"])
+        return input
+
+
 class PuncDataset(data.Dataset):
     """Custom Dataset for punctuation prediction."""
 
