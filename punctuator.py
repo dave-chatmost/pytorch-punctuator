@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 
-from data.data_loader import NoPuncTextDataset
+from data.dataset import NoPuncTextDataset
 from various_punctuator import LSTMPPunctuator
 from utils import add_punc_to_txt
 
@@ -44,7 +44,7 @@ def inference(args):
         if args.cuda:
             inputs = Variable(torch.LongTensor(id_seq).cuda(), volatile=True)
         else:
-            inputs = Variable(torch.LongTensor(data), volatile=True)
+            inputs = Variable(torch.LongTensor(id_seq), volatile=True)
         # forward propagation
         hidden = model.init_hidden(batch_size=1)
         scores, hidden = model(inputs, hidden)
